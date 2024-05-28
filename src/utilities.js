@@ -3,6 +3,7 @@ var EARTHRAD = 6378.137; //  Earth radius major axis km
 var MINRAD = 6356.752; //earth radius minor axis
 var semaphore;
 var startElevation;
+	var keys = require('./apikeys');
 
 function timezoneDefault(zone) {
     zone.zoneAbbr = 'UTC';
@@ -11,26 +12,36 @@ function timezoneDefault(zone) {
 }
 
 function gettimezone(start, coords, zone, recall) {
-    $.ajax({
-            url: "gettimezone.php",
+				
+     $.ajax({
+            url: "/gettimezone.php",
             data: {
-                recstart: start,
                 lat: coords.lat,
-                lon: coords.lng
+                lng: coords.lng
             },
-            timeout: 3000,
-            method: "POST",
-            dataType: "json"
+            timeout: 5000,
+            method: "GET",
+            datatype: "json",
+	
         })
-        .done(function(data) {
-            if (data.status === 'OK') {
-                zone.zoneAbbr = data.timeZoneName.match(/[A-Z]/g).join('');
-                zone.offset = data.rawOffset + parseFloat(data.dstOffset);
-                zone.zoneName = data.timeZoneName;
-            }
-            else {
-                timezoneDefault(zone);
-            }
+        .done(function(result) {
+			try {
+				data=JSON.parse(result);
+				if (typeof(data.countryCode) !== 'undefined' )  {			// from geonames, status field only appears if there's an error
+					zone.zoneAbbr = data.countryCode;
+					zone.offset = data.rawOffset * 3600;	// response in hours, we want seconds
+					zone.zoneName = data.timezoneId;
+				}
+				else {
+					timezoneDefault(zone);
+				}
+			}
+			catch (err)
+			{ 
+				console.log('gettimezone: ' + err.message);
+				timezoneDefault(zone);
+			}
+			
         })
         .fail(function() {
             timezoneDefault(zone);
@@ -40,27 +51,34 @@ function gettimezone(start, coords, zone, recall) {
             if (semaphore === 0) {
                 recall(startElevation);
             }
-        });
+         });
 }
 
 function getBaseElevation(coords, recall) {
     $.ajax({
-            url: "getelevation.php",
+            url: "/getelevation.php",
             data: {
                 lat: coords.lat,
-                lon: coords.lng
+                lng: coords.lng
             },
-            timeout: 3000,
-            method: "POST",
+            timeout: 5000,
+            method: "GET",
             dataType: "json"
         })
-        .done(function(data) {
-            if (data.status === 'OK') {
-                startElevation = data.results[0].elevation;
-            }
-            else {
-                startElevation = null;
-            }
+        .done(function(result) {
+			try {
+				data = (typeof(result)==='object') ? result: JSON.parse(result);
+				if (typeof(data.astergdem) !== 'undefined') {
+					startElevation = data.astergdem;
+				}
+				else {
+					startElevation = null;
+				}
+			}
+			catch(err) {
+				console.log('getBaseElevation: ' + err.message);
+				startElevation = null;
+			}
         })
         .fail(function() {
             startElevation = null;
@@ -361,8 +379,8 @@ module.exports = {
     },
     getLocalInfo: function(start, coords, zone, recall) {
         semaphore = 2;
-        gettimezone(start, coords, zone, recall);
         getBaseElevation(coords, recall);
+        gettimezone(start, coords, zone, recall);
     },
 
     kasaRegress: function(xVectors, yVectors, xMean, yMean) { //Kasa method for circular regression
@@ -430,30 +448,52 @@ module.exports = {
 
     getElevation: function(coords, recall, index, glideralt) {
         var elevation;
-        $.ajax({
-                url: "getelevation.php",
-                data: {
-                    lat: coords.lat,
-                    lon: coords.lng
-                },
-                timeout: 3000,
-                method: "POST",
-                dataType: "json"
-            })
-            .done(function(data) {
-                if (data.status === 'OK') {
-                    elevation = data.results[0].elevation;
-                }
-                else {
-                    elevation = null;
-                }
-            })
-            .fail(function() {
-                elevation = null;
-            })
-            .always(function() {
+		
+		    $.ajax({
+            url: "/getelevation.php",
+            data: {
+                lat: coords.lat,
+                lng: coords.lng
+            },
+            timeout: 5000,
+            method: "GET",
+            dataType: "json"
+        })
+        .done(function(result) {
+			try {
+				data = (typeof(result)==='object') ? result: JSON.parse(result);
+				//data = JSON.parse(result);
+				if (typeof(data.astergdem) !== 'undefined') {
+					elevation = data.astergdem;
+				}
+				else {
+					elevation = null;
+				}
+			}
+			catch(err) {
+				elevation=null;
+			}
+        })
+        .fail(function() {
+            elevation = null;
+        })
+        .always(function() {
                 recall(elevation, index, glideralt);
-            });
-    }
+        });
+		
+    },
+	getHeading: function(fromPoint, toPoint) {
+	// get the (approximate) heading in degrees between two points
+	// simple calc for speed
+	var heading = 0;
+	if (fromPoint && toPoint) {
+		var latA = fromPoint.lat * Math.PI/180;
+		var lonA = fromPoint.lng * Math.PI / 180;
+		var latB = toPoint.lat * Math.PI / 180;
+		var lonB = toPoint.lng * Math.PI / 180;
+		heading = 180 * (Math.atan2(Math.sin(lonB - lonA) * Math.cos(latB),Math.cos(latA) * Math.sin(latB) - Math.sin(latA)*Math.cos(latB) * Math.cos(lonB-lonA)) % (2 * Math.PI))/ (Math.PI);
+	}
+	return heading;
+	}
 
 };

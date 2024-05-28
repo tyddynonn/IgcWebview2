@@ -38,7 +38,7 @@
     var recordInterval;
 
     function secondPass() {
-        var utils = require('./utilities');
+        var utils = require('./utilities');		
         var interval = Math.ceil(15 / recordInterval); //getting 15 second average turn rate
         var j;
         var turnList = []; //rolling list of last 30 seconds worth of turn changes
@@ -48,6 +48,7 @@
         var deltaBearing;
         var speedToHere
         var travelled;
+		
         turnRate.push(0);
         groundSpeed.push(0);
         for (j = 1; j < recordTime.length - 1; j++) {
@@ -109,7 +110,7 @@
         initialise: function(infile) {
 
             function getTaskPoints(declaration) {
-                if (declaration.length > 4) {
+                if (declaration.length > 3) {   // changed from 4 to 3 to allow for a Goal flight
                     var i;
                     for (i = 1; i < declaration.length - 1; i++) {
                         if ((declaration[i].substring(1, 8) + declaration[i].substring(9, 17)) !== '000000000000000') { //Allow for loggers with empty C records (eg. EW)
@@ -121,20 +122,25 @@
             }
 
             function parsePosition(positionInfo, startTime) {
-                var positionTime = utils.getUnixTime(positionInfo[1]); //Simple conversion from hhmmss. Return seconds offset from UTC midnight- all we need.
-                if (positionTime < startTime) { //allow for flight straddling UTC midnight
-                    positionTime += 86400;
+				if (positionInfo) {
+					var positionTime = utils.getUnixTime(positionInfo[1]); //Simple conversion from hhmmss. Return seconds offset from UTC midnight- all we need.
+					if (positionTime < startTime) { //allow for flight straddling UTC midnight
+						positionTime += 86400;
+					}
+					var position = utils.parseLatLong(positionInfo[2]); //conversion to latLong format done in utilites module, as the same code is used elsewhere
+					if ((position.lat !== 0) && (position.lng !== 0)) {
+						return {
+							recordTime: positionTime,
+							latLong: position,
+							quality: positionInfo[3],
+							pressureAltitude: parseInt(positionInfo[4], 10),
+							gpsAltitude: parseInt(positionInfo[5], 10)
+						};
                 }
-                var position = utils.parseLatLong(positionInfo[2]); //conversion to latLong format done in utilites module, as the same code is used elsewhere
-                if ((position.lat !== 0) && (position.lng !== 0)) {
-                    return {
-                        recordTime: positionTime,
-                        latLong: position,
-                        quality: positionInfo[3],
-                        pressureAltitude: parseInt(positionInfo[4], 10),
-                        gpsAltitude: parseInt(positionInfo[5], 10)
-                    };
-                }
+				}
+				else {
+					return null;
+				}
             }
 
             function getReadEnl(iRecord) {

@@ -18,10 +18,12 @@
  
     var doit;
 
-    var script = document.createElement('script');
-    script.type = 'text/javascript';
-    script.src = 'https://maps.googleapis.com/maps/api/js?v=3&key=' + apiKeys.googleMaps + '&callback=ginit';
-    document.body.appendChild(script);
+	
+    //var script = document.createElement('script');
+    //script.type = 'text/javascript';
+	//script.src='/Leaflet/leaflet.src'
+    //script.src = 'https://maps.googleapis.com/maps/api/js?v=3&key=' + apiKeys.googleMaps + '&callback=ginit';
+    //document.body.appendChild(script);
 
     function hiderest() {
         $('.easyclose').hide();
@@ -34,6 +36,9 @@
         preference.getStoredValues();
         present.showPreferences();
         document.getElementById('help').scrollIntoView();
+		
+		ginit();
+		
         $("#igc").prop("checked", true); //Firefox ignores markup on refresh
 
         $('#help').click(function() {
@@ -262,5 +267,40 @@
                     $(this).text('Show');
                 }
             });
-    });
+			
+		// check if a URL to a logger file was provided...
+		const urlParams= new URLSearchParams(window.location.search);		
+		var igcURL = urlParams.get('igc');
+	
+		if (igcURL) {
+				var request = new XMLHttpRequest();
+				request.open('GET', igcURL, true);
+				request.responseType = 'blob';
+				request.onload = function() {
+					loadIGC(request.response);
+				};
+			request.send();
+		}
+		
+		function loadIGC(igc) {		
+			var reader = new FileReader();
+			reader.readAsText(igc);
+			reader.onload = function(e) {
+				try {
+					igcFile.initialise(this.result);
+					present.displayIgc();
+				}
+				catch (ex) {
+					if (ex instanceof igcFile.IGCException) {
+						alert(ex.message);
+					}
+					else {
+						throw ex;
+					}
+				}
+			};
+		}
+
+		
+    });		// document.ready
 })();

@@ -330,7 +330,9 @@
             $('#timePositionDisplay').html(displaySentence);
             var xval = 1000 * (flight.recordTime[index] + flight.timeZone.offset);
             var yval = altInfo.altPos;
-            mapControl.setTimeMarker(flight.latLong[index]);
+			// CF181229 - add heading info...
+			var heading = (index > 0) ? utils.getHeading(flight.latLong[index-1], flight.latLong[index]) : 0
+            mapControl.setTimeMarker(flight.latLong[index], heading);
             barogram.lockCrosshair({
                 x: xval,
                 y: yval
