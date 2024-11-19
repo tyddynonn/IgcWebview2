@@ -37,7 +37,7 @@
 
     var sectors = {
         startrad :5,
-        finrad : 1,
+        finrad : 5,
         tprad : 0.5,
         sector_rad:  20,
         sector_angle:  90,
@@ -136,7 +136,7 @@
 
         setSectorDefaults: function() {
             sectors.startrad = 5;
-            sectors.finrad = 1;
+            sectors.finrad = 5;
             sectors.tprad = 0.5;
             sectors.sector_rad = 20;
             sectors.sector_angle = 90;
