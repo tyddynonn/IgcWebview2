@@ -19,7 +19,7 @@
     var engineLines = [];
     var pin;
 	var savedcursor;
-	
+
     function putMarker(marker, coords) {
         marker.setLatLng(coords);
         marker.addTo(map);
@@ -139,12 +139,37 @@
 		);
         return sectorPoly;
     }
-	
+    async function getTPMarkers() {
+        var utils = require('./utilities');
+        const tps = await utils.getTurnPoints();
+
+        let markers = []; 
+        let tpicon = L.icon({
+            iconUrl: 'Icons/pin.png',
+            iconSize: [20, 30],
+            iconAnchor: [0, 30],
+            zIndexOffset: 500,
+        })           
+            tps.forEach((tp)=>{
+                if (!tp.Deleted) {
+                    let marker = L.marker(L.latLng(tp.Latitude,tp.Longitude),{icon:tpicon})
+                        .bindTooltip(`${tp.Trigraph}`)
+                        .bindPopup(`${tp.Name}<br/>${tp.Latitude.toFixed(3)}, ${tp.Longitude.toFixed(3)}`);
+                    markers.push(marker)                   
+                    }
+                });            
+        return markers
+    }
 
 	
     module.exports = {
-        initmap: function() {
+        initmap: async function() {
 			if (typeof (L) === 'undefined') return null;
+
+            map = L.map('map', {
+				center: [54.5, -3],
+				zoom: 5
+			});
 
             const LimaLabsKey = "1004KGgIweDGsd4uqlFwerGuDFGIT3HfsadOtwguQKERA01";
 	
@@ -180,7 +205,6 @@
                 }})
             .then (result => {
                 mapstyles = result
-                console.log(`mapStyles fetched: `, mapstyles)   
             })
 
             var openAIPairspacepbf = L.vectorGrid.protobuf(airspaceURLpbf, {
@@ -197,13 +221,7 @@
                 attribution: "Airspace by <a HREF=http://www.openaip.net>OpenAIP</a>t"
             });
 
-            var OpenAIPLayers =  L.layerGroup([openAIP]);			
-
-			map = L.map('map', {
-				center: [54.5, -3],
-				zoom: 5
-			});
-
+            var OpenAIPLayers =  L.layerGroup([openAIP]);
 
 
 			var baseLayers = {
@@ -214,15 +232,16 @@
 					
 			var overlayLayers = {
 				'Airspace': OpenAIPLayers,
-			};
-			L.control.layers(baseLayers, overlayLayers).addTo(map);
+        	};
 
-           
 
+			var layerControl =  L.control.layers(baseLayers, overlayLayers).addTo(map);        
 
 			baseLayers.Street.addTo(map);			
-
 	
+            const TPLayer = L.layerGroup(await getTPMarkers());
+            layerControl.addOverlay(TPLayer, 'BGA TPs')
+            
 			gliderMarker = L.marker(L.latLng(0,0), {
 				icon: L.icon({
 					iconUrl: 'Icons/glider.png',
@@ -284,7 +303,7 @@
 					color: 'blue',
 					opacity: 1,
 					interactive: false,
-					weight: 4
+					weight: 3
 				}
 			).addTo(map);
 			
@@ -317,6 +336,23 @@
             }
         },
 
+        setTurnpoints: function (tps) {
+            // tps as loaded from the BGA Ladder
+            let markers = [];            
+            tps.forEach((tp)=>{
+                if (!tp.Deleted) {
+                    // let icon = L.divIcon({
+                    //         className: 'TPIconBlue', 
+                    //         html:`<img src="/leaflet/images/marker-icon.png"/><span>${tp.Trigraph}</span>`
+                    //     });
+                    let marker = L.marker(L.latLng(tp.Latitude,tp.Longitude)).bindTooltip(`${tp.Trigraph}`)
+                    markers.push(marker)                   
+                    }
+                });
+            
+            const TPLayer=L.layerGroup(markers);
+            return TPLayer;            
+        },
         setAirspace: function(airdata) {
             var i;
             var j;
@@ -335,8 +371,6 @@
 					airDrawOptions
 				);
 				
-//                airspace.polygons[i] = new google.maps.Polygon(airDrawOptions);
-//                airspace.polygons[i].setPaths(airdata.polygons[i].coords);
                 airspace.polygon_bases[i] = airdata.polygons[i].base;
             }
             for (j = 0; j < airdata.circles.length; j++) {
@@ -346,12 +380,11 @@
 				airDrawOptions
 				);
 				
-//                airspace.circles[j] = new google.maps.Circle(airDrawOptions);
-//                airspace.circles[j].setRadius(1000 * airdata.circles[j].radius);
-//                airspace.circles[j].setCenter(airdata.circles[j].centre);
+
                 airspace.circle_bases[j] = airdata.circles[j].base;
             }
         },
+
 
         addSectors: function() {
             var i;

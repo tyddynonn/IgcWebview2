@@ -400,10 +400,11 @@
             $('#timeSlider').prop('max', flight.recordTime.length - 1);
             mapControl.setBounds(flight.bounds);
             $('#mapWrapper').css('visibility', 'visible');
-            $.when(utils.getAirspace(flight.bounds, 20)).done(function(args) {
-                mapControl.setAirspace(args);
-                mapControl.showAirspace();
-            });
+            // $.when(utils.getAirspace(flight.bounds, 20)).done(function(args) {
+            //     mapControl.setAirspace(args);
+            //     mapControl.showAirspace();
+            // });
+
             mapControl.addTrack(flight.latLong);
             $('#zoomtrack').show();
             if (prefs.enlPrefs.detect === 'On') {

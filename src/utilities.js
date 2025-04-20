@@ -54,42 +54,48 @@ function gettimezone(start, coords, zone, recall) {
          });
 }
 
-function getBaseElevation(coords, recall) {
-    $.ajax({
-            url: "/getelevation.php",
-            data: {
-                lat: coords.lat,
-                lng: coords.lng
-            },
-            timeout: 5000,
-            method: "GET",
-            dataType: "json"
-        })
-        .done(function(result) {
-			try {
-				data = (typeof(result)==='object') ? result: JSON.parse(result);
-				if (typeof(data.astergdem) !== 'undefined') {
-					startElevation = data.astergdem;
-				}
-				else {
-					startElevation = null;
-				}
-			}
-			catch(err) {
-				console.log('getBaseElevation: ' + err.message);
-				startElevation = null;
-			}
-        })
-        .fail(function() {
-            startElevation = null;
-        })
-        .always(function() {
-            semaphore--;
-            if (semaphore === 0) {
-                recall(startElevation);
-            }
-        });
-}
+async function  getBaseElevation(coords, recall) {
+
+    const url = `https://www.elevation-api.eu/v1/elevation/${coords.lat}/${coords.lng}?json`
+    try {
+        const res = await fetch(url,
+            {
+                mode: 'no-cors'
+            });
+        if (!res.ok) return
+        const elev = await res.json();
+        startElevation = data.elevation ?? null
+    }
+    catch {
+        return null
+    }
+    finally {
+        semaphore--;
+        if (semaphore === 0) {
+            recall(startElevation);
+        }
+    }
+
+// 			try {
+// 				data = (typeof(result)==='object') ? result: JSON.parse(result);
+//                 console.log(`Start Elevation is ${data.elevation}`)
+//                 startElevation = data.elevation ?? null
+// 			}
+// 			catch(err) {
+// 				console.log('getBaseElevation: ' + err.message);
+// 				startElevation = null;
+// 			}
+//         })
+//         .fail(function() {
+//             startElevation = null;
+//         })
+//         .always(function() {
+//             semaphore--;
+//             if (semaphore === 0) {
+//                 recall(startElevation);
+//             }
+//         });
+ }
 
 
 module.exports = {
@@ -129,6 +135,18 @@ module.exports = {
             method: "POST",
             dataType: "json"
         });
+    },
+    getTurnPoints: async function () {
+        const tpsurl = 'https://api.bgaladder.net/api/TPS/0'
+        try {
+            const res = await fetch(tpsurl);
+            if (!res.ok) return
+            const tps = await res.json();
+            return tps
+        }
+        catch {
+            return
+        }
     },
 
     getUnixTime: function(hhmmss) { //Once the date is displayed we are just tracking offset from midnight
