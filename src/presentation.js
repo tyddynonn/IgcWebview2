@@ -356,7 +356,8 @@
         },
 
         getGeoInfo: function(elevation) {
-            if (elevation === null) {
+            
+            if (elevation === null | elevation===undefined) {
                 var message = "Start elevation not available.";
                 $('#QNH').attr('disabled', true);
                 $('#QFE').attr('disabled', false);

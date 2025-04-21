@@ -295,6 +295,11 @@
         },
 
         showAltitude: function(pressureAlt, gpsAlt, toPressure, toGps, afElevation) {
+            // console.log(`showAltitude: pressureAlt ${pressureAlt},
+            //                            gpsAlt ${gpsAlt},
+            //                            toPressure ${toPressure},
+            //                            toGPS ${toGps},
+            //                            afElevation ${afElevation}`)
             var takeoff;
             var source;
             var metreval;

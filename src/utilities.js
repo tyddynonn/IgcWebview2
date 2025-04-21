@@ -11,90 +11,100 @@ function timezoneDefault(zone) {
     zone.zoneName = 'UTC';
 }
 
-function gettimezone(start, coords, zone, recall) {
-				
-     $.ajax({
-            url: "/gettimezone.php",
-            data: {
-                lat: coords.lat,
-                lng: coords.lng
-            },
-            timeout: 5000,
-            method: "GET",
-            datatype: "json",
-	
-        })
-        .done(function(result) {
-			try {
-				data=JSON.parse(result);
-				if (typeof(data.countryCode) !== 'undefined' )  {			// from geonames, status field only appears if there's an error
-					zone.zoneAbbr = data.countryCode;
-					zone.offset = data.rawOffset * 3600;	// response in hours, we want seconds
-					zone.zoneName = data.timezoneId;
-				}
-				else {
-					timezoneDefault(zone);
-				}
-			}
-			catch (err)
-			{ 
-				console.log('gettimezone: ' + err.message);
-				timezoneDefault(zone);
-			}
-			
-        })
-        .fail(function() {
-            timezoneDefault(zone);
-        })
-        .always(function() {
-            semaphore--;
-            if (semaphore === 0) {
-                recall(startElevation);
-            }
-         });
-}
+async function gettimezone(start, coords, zone, recall) {
 
-async function  getBaseElevation(coords, recall) {
-
-    const url = `https://www.elevation-api.eu/v1/elevation/${coords.lat}/${coords.lng}?json`
+    const url = `https://secure.geonames.org/timezoneJSON?username=tyddynonn&lat=${coords.lat}&lng=${coords.lng}`
     try {
-        const res = await fetch(url,
-            {
-                mode: 'no-cors'
-            });
-        if (!res.ok) return
-        const elev = await res.json();
-        startElevation = data.elevation ?? null
+        const res = await fetch(url);
+
+        if (!res.ok) {
+            timezoneDefault(zone);
+            return
+        }
+        const data = await res.json();
+
+        if (typeof(data.countryCode) !== 'undefined' )  {			// from geonames, status field only appears if there's an error
+            zone.zoneAbbr = data.countryCode;
+            zone.offset = data.rawOffset * 3600;	// response in hours, we want seconds
+            zone.zoneName = data.timezoneId;
+        }
+        else {
+            timezoneDefault(zone);
+        }
     }
-    catch {
+    catch(e) {
+        console.log(`gettimezone `,e)
+        timezoneDefault(zone);
         return null
     }
     finally {
+        //console.log(`getTimezone finally with startElevation ${startElevation}, semaphore ${semaphore}`)
         semaphore--;
         if (semaphore === 0) {
             recall(startElevation);
         }
     }
 
-// 			try {
-// 				data = (typeof(result)==='object') ? result: JSON.parse(result);
-//                 console.log(`Start Elevation is ${data.elevation}`)
-//                 startElevation = data.elevation ?? null
-// 			}
-// 			catch(err) {
-// 				console.log('getBaseElevation: ' + err.message);
-// 				startElevation = null;
-// 			}
-//         })
-//         .fail(function() {
-//             startElevation = null;
-//         })
-//         .always(function() {
-//             semaphore--;
-//             if (semaphore === 0) {
-//                 recall(startElevation);
-//             }
-//         });
+
+    //  $.ajax({
+    //         url: "/gettimezone.php",
+    //         data: {
+    //             lat: coords.lat,
+    //             lng: coords.lng
+    //         },
+    //         timeout: 5000,
+    //         method: "GET",
+    //         datatype: "json",
+	
+    //     })
+    //     .done(function(result) {
+	// 		try {
+	// 			data=JSON.parse(result);
+	// 			if (typeof(data.countryCode) !== 'undefined' )  {			// from geonames, status field only appears if there's an error
+	// 				zone.zoneAbbr = data.countryCode;
+	// 				zone.offset = data.rawOffset * 3600;	// response in hours, we want seconds
+	// 				zone.zoneName = data.timezoneId;
+	// 			}
+	// 			else {
+	// 				timezoneDefault(zone);
+	// 			}
+	// 		}
+	// 		catch (err)
+	// 		{ 
+	// 			console.log('gettimezone: ' + err.message);
+	// 			timezoneDefault(zone);
+	// 		}
+			
+    //     })
+    //     .fail(function() {
+    //         timezoneDefault(zone);
+    //     })
+    //     .always(function() {
+    //         semaphore--;
+    //         if (semaphore === 0) {
+    //             recall(startElevation);
+    //         }
+    //      });
+}
+
+async function  getBaseElevation(coords, recall) {
+
+    const url = `https://api.bgaladder.net/api/elevation/${coords.lat}/${coords.lng}`
+    let startElevation=null;
+    try {
+        const res = await fetch(url);
+        if (res.ok) {
+            const data = await res.json();
+            startElevation = data.elevation ?? null
+            }
+    }
+    catch (e) {
+        console.log(`getBaseElevation: error `, e)
+    }
+    finally {
+        //console.log(`getBaseElevation: finally with elevation ${startElevation}, semaphore ${semaphore}`)
+        recall(startElevation);
+    }
  }
 
 
@@ -464,41 +474,21 @@ module.exports = {
         return EARTHRAD;
     },
 
-    getElevation: function(coords, recall, index, glideralt) {
-        var elevation;
-		
-		    $.ajax({
-            url: "/getelevation.php",
-            data: {
-                lat: coords.lat,
-                lng: coords.lng
-            },
-            timeout: 5000,
-            method: "GET",
-            dataType: "json"
-        })
-        .done(function(result) {
-			try {
-				data = (typeof(result)==='object') ? result: JSON.parse(result);
-				//data = JSON.parse(result);
-				if (typeof(data.astergdem) !== 'undefined') {
-					elevation = data.astergdem;
-				}
-				else {
-					elevation = null;
-				}
-			}
-			catch(err) {
-				elevation=null;
-			}
-        })
-        .fail(function() {
-            elevation = null;
-        })
-        .always(function() {
-                recall(elevation, index, glideralt);
-        });
-		
+    getElevation: async function(coords, recall, index, glideralt) {
+        var elevation= null;
+        const url = `https://api.bgaladder.net/api/elevation/${coords.lat}/${coords.lng}`
+        try {
+            const res = await fetch(url);
+            if (!res.ok) return null
+            const data = await res.json();
+            elevation = data.elevation ?? null
+        }
+        catch (e) {
+            console.log(`getElevation error `, e)
+        }
+        finally {
+            recall(elevation, index, glideralt);
+            }	
     },
 	getHeading: function(fromPoint, toPoint) {
 	// get the (approximate) heading in degrees between two points
