@@ -10,6 +10,7 @@
     var recordTime = [];
     var fixQuality = [];
     var enl = [];
+    var mop=[];
     var turnRate = [];
     var groundSpeed = [];
     var taskpoints = {
@@ -83,6 +84,7 @@
         recordTime.length = 0;
         fixQuality.length = 0;
         enl.length = 0;
+        mop.length=0;
         taskpoints.names.length = 0;
         taskpoints.coords.length = 0;
         unixStart.length = 0;
@@ -157,6 +159,19 @@
                 }
             }
 
+            function getReadMoP(iRecord) {
+                var charpt = iRecord.search("MOP");
+                if (charpt > 6) {
+                    var pos = iRecord.substring(charpt - 4, charpt);
+                    return {
+                        start: parseInt(pos.substring(0, 2)) - 1,
+                        end: parseInt(pos.substring(2, 4))
+                    };
+                }
+                else {
+                    return null;
+                }
+            }
             function parseHeader(headerRecord) {
                 var headerSubtypes = {
                     'PLT': 'Pilot',
@@ -235,6 +250,7 @@
             var currentLine;
             var headerData;
             var readEnl = null;
+            var readMop = null;
             var positionMatch;
             var cRecords = [];
             var lRecords = [];
@@ -282,6 +298,7 @@
                         break;
                     case 'I': //Fix extensions
                         readEnl = getReadEnl(currentLine);
+                        readMop = getReadMoP(currentLine)
                         break;
                     case 'C':
                         if (taskRegex.test(currentLine)) { //will parse later
@@ -304,6 +321,7 @@
                             gpsAltitude.push(positionData.gpsAltitude);
 
                             fixQuality.push(positionData.quality);
+
                             if (readEnl !== null) {
                                 noiseLevel = parseInt(currentLine.substring(readEnl.start, readEnl.end));
                             }
@@ -311,6 +329,14 @@
                                 noiseLevel = 0;
                             }
                             enl.push(noiseLevel);
+                            if (readMop !== null) {
+                                noiseLevel = parseInt(currentLine.substring(readMop.start, readMop.end));
+                            }
+                            else {
+                                noiseLevel = 0;
+                            }
+                            mop.push(noiseLevel);
+
                             if (positionData.pressureAltitude > 0) { //determine whether pressure altitude is available
                                 hasPressure = true;
                             }
@@ -400,7 +426,7 @@
             this.baseElevation = elevation;
         },
 
-        getEngineRuns: function(enlpref) {
+        getEngineRuns: function(enlpref, moppref) {
             var i = 0;
             var startIndex = null;
             var timeInterval;
@@ -417,6 +443,25 @@
                         if (startIndex === null) {
                             startIndex = i;
                         }
+                    
+                    }
+                    // else {
+                    //     if (startIndex !== null) {
+                    //         timeInterval = recordTime[i - 1] - recordTime[startIndex];
+                    //         if (timeInterval >= enlpref.duration) {
+                    //             glidingRuns.end.push(startIndex);
+                    //             glidingRuns.start.push(i);
+                    //             engineRunList.push(engineRun);
+                    //         }
+                    //         engineRun = [];
+                    //         startIndex = null;
+                    //     }
+                    // }
+                    if (mop[i] > moppref.threshold) {
+                        engineRun.push(latLong[i]);
+                        if (startIndex === null) {
+                            startIndex = i;
+                        }
                     }
                     else {
                         if (startIndex !== null) {
@@ -429,8 +474,7 @@
                             engineRun = [];
                             startIndex = null;
                         }
-                    }
-                    i++;
+                    }                    i++;
                 }
                 while (i < landingIndex); //ignore taxying post landing
                 glidingRuns.end.push(landingIndex);
@@ -438,7 +482,6 @@
         },
 
         showEngineRuns: function() {
-            console.log("getting");
             console.log(engineRunList);
         },
 
@@ -494,6 +537,7 @@
         recordTime: recordTime,
         fixQuality: fixQuality,
         enl: enl,
+        mop: mop,
         taskpoints: taskpoints,
         bounds: bounds,
         takeOff: takeOff,

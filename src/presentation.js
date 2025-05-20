@@ -150,16 +150,41 @@
                 threshold: $('#enlthreshold').val(),
                 duration: $('#enltime').val()
             };
+            var mop = {
+                detect: $("input[name=enldetect]:checked").val(),
+                threshold: $('#mopthreshold').val(),
+                duration: $('#enltime').val()
+            };
+
             var saveit = $('#saveenl').prop('checked');
             if (prefs.setEnl(enl, saveit)) {
                 if (flight.recordTime.length > 0) {
-                    flight.getEngineRuns(enl);
+                    flight.getEngineRuns(enl, mop);
                     mapControl.showEngineRuns(flight.engineRunList);
                     barogram.plot();
                 }
             }
         },
-
+        setMopPrefs: function() {
+            var enl = {
+                detect: $("input[name=enldetect]:checked").val(),
+                threshold: $('#enlthreshold').val(),
+                duration: $('#enltime').val()
+            };
+            var mop = {
+                detect: $("input[name=enldetect]:checked").val(),
+                threshold: $('#mopthreshold').val(),
+                duration: $('#enltime').val()
+            };
+            var saveit = $('#saveenl').prop('checked');
+            if (prefs.setMop(mop, saveit)) {
+                if (flight.recordTime.length > 0) {
+                    flight.getEngineRuns(enl,mop);
+                    mapControl.showEngineRuns(flight.engineRunList);
+                    barogram.plot();
+                }
+            }
+        },
         showImported: function(points) {
             enterTask(points, true);
         },
@@ -208,7 +233,23 @@
             $('#enlthreshold').val(enlObj.threshold),
                 $('#enltime').val(enlObj.duration);
         },
-
+        showMopPrefs: function(origin) {
+            var mopObj;
+            if (origin === 'current') {
+                mopObj = prefs.mopPrefs;
+            }
+            else {
+                mopObj = prefs.mopDefaults;
+            }
+            if (mopObj.detect === 'On') {
+                $("input[name=mopdetect][value='On']").prop("checked", true);
+            }
+            else {
+                $("input[name=mopdetect][value='Off']").prop("checked", true);
+            }
+            $('#mopthreshold').val(mopObj.threshold),
+                $('#enltime').val(mopObj.duration);
+        },
         showPreferences: function() {
             $('#altitudeunits').val(prefs.units.altitude);
             $('#lengthunits').val(prefs.units.distance);
@@ -218,6 +259,7 @@
             $('#airclip').val(prefs.airclip);
             this.showSectorPreferences('current');
             this.showEnlPrefs('current');
+            this.showMopPrefs('current');
             this.showAltPreferences();
         },
 
@@ -307,7 +349,12 @@
                         $('#thermal').hide();
                     }
                     if (turn < 4) {
-                        flightMode = "Cruising";
+                        if ((flight.enl[index] > prefs.enlPrefs.threshold) || (flight.mop[index] > prefs.mopPrefs.threshold)) {
+                            flightMode='Engine on'
+                        }
+                        else {
+                            flightMode = "Cruising";
+                        }
                     }
                 }
             }
@@ -409,7 +456,7 @@
             mapControl.addTrack(flight.latLong);
             $('#zoomtrack').show();
             if (prefs.enlPrefs.detect === 'On') {
-                flight.getEngineRuns(prefs.enlPrefs);
+                flight.getEngineRuns(prefs.enlPrefs, prefs.mopPrefs);
                 mapControl.showEngineRuns(flight.engineRunList);
             }
             if (prefs.tasksource === 'igc') {

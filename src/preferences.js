@@ -14,15 +14,26 @@
     };
 
     var enlPrefs = {
-        detect: 'Off',
+        detect: 'on',
         threshold: 500,
         duration: 12
     };
 
     var enlDefaults = {
-        detect: 'Off',
+        detect: 'On',
         threshold: 500,
         duration: 12
+    };
+    var mopPrefs = {
+        detect: 'on',
+        threshold: 250,
+        duration: 10
+    };
+
+    var mopDefaults = {
+        detect: 'On',
+        threshold: 250,
+        duration: 10
     };
 
     var tasksource = 'igc';
@@ -50,6 +61,24 @@
         var configerror = "";
         if (enl.detect === 'On') {
             if ((enl.threshold < 1) || (enl.threshold > 999)) {
+                configerror += "\nIllegal threshold value";
+            }
+            if ((enl.duration < 2) || (enl.duration > 100)) {
+                configerror += "\nUnrealistic time value";
+            }
+        }
+        if (configerror.length > 0) {
+            alert(configerror);
+            return false;
+        }
+        else {
+            return true;
+        }
+    }
+    function mopRealityCheck(mop) {
+        var configerror = "";
+        if (enl.detect === 'On') {
+            if ((mop.threshold < 1) || (mop.threshold > 999)) {
                 configerror += "\nIllegal threshold value";
             }
             if ((enl.duration < 2) || (enl.duration > 100)) {
@@ -130,7 +159,9 @@
         },
         units: units,
         enlPrefs: enlPrefs,
+        mopPrefs: mopPrefs,
         enlDefaults: enlDefaults,
+        mopDefaults:mopDefaults,
         altPrefs: altPrefs,
         metre2foot: METRE2FOOT,
 
@@ -170,7 +201,19 @@
                 return false;
             }
         },
+        setMop: function(newmop, savevals) {
+            if (mopRealityCheck(newmop)) {
 
+                this.mopPrefs = newmop;
+                if (savevals) {
+                    storePreference('mopprefs', JSON.stringify(newmop));
+                }
+                return true;
+            }
+            else {
+                return false;
+            }
+        },
         getStoredValues: function() {
             try {
                 var storedAltitudeUnit = localStorage.getItem("altitudeUnit");
@@ -206,6 +249,10 @@
                 if (storedEnlPrefs) {
                     this.enlPrefs = JSON.parse(storedEnlPrefs);
                 }
+                var storedMopPrefs = localStorage.getItem("mopprefs");
+                if (storedMopPrefs) {
+                    this.mopPrefs = JSON.parse(storedMopPrefs);
+                }                
                 var storedAltPrefs = localStorage.getItem("altPrefs");
                 if (storedAltPrefs) {
                     this.altPrefs = JSON.parse(storedAltPrefs);

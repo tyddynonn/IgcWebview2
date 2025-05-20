@@ -209,13 +209,15 @@ button.floatright {
 #setenl {
     height: 350px;
 }
-
+#setmop {
+    height: 350px;
+}
 #setaltref {
     height: 500px;
 }
 
-#enlthreshold, #enltime {
-    width: 4ch;
+#enlthreshold, #mopthreshold, #enltime {
+    width: 5ch;
 }
 
 #prefs {

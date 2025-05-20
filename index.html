@@ -256,10 +256,14 @@
          <button class="closewindow floatright">Close</button>
       </div>
       <div id='setenl' class='easyclose dialog'>
-         <p><b>ENL engine detect:</b> <input type="radio" name="enldetect" value="Off" id='enloff' checked><label for='enloff'>Off</label>
-         &nbsp;  <input type="radio" name="enldetect" value="On" id='enlon'><label for='enlon'>On</label>
-         <p>Threshold: <input type='text' id="enlthreshold" value='500'> (1-1000)</p>
-         <p>Time required: <input type='text' id="enltime" value='12'> seconds</p>
+         <p><b>Engine detect:</b> 
+         <input type="radio" name="enldetect" value="Off" id='enloff' checked><label for='enloff'>Off</label>
+         &nbsp;  
+         <input type="radio" name="enldetect" value="On" id='enlon'><label for='enlon'>On</label>
+         
+         <p>ENL Threshold: <input type='number' id="enlthreshold" value='500'> (1-1000)</p>
+         <p>MoP Threshold: <input type='number' id="mopthreshold" value='250'> (1-1000)</p>
+         <p>Time required: <input type='number' id="enltime" value='12'> seconds</p>
          <button id="enlhelp">Help</button>  
          <button id="enldefaults" class="floatright">Restore defaults</button>
         <p><div class='checklabel'>Save configuration:</div>

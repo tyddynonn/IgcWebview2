@@ -433,7 +433,7 @@
         showEngineRuns: function(runList) {
             var i;
             var lineOpt = {
-                color: 'yellow',
+                color: 'red',
                 opacity: 1.0,
                 interactive: false,
 //                zIndex: google.maps.Marker.MAX_ZINDEX + 1,

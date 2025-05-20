@@ -14,11 +14,13 @@
             var plotColour;
             var barogramData = [];
             var enlData = [];
+            var mopData = [];
             var altOffset = 0;
             var flight = require('./igc');
             var prefs = require('./preferences');
             var multiplier;
             var showEnl;
+            var showMop;
             var enlLabel;
             var enlThreshold;
             var spotAlt;
@@ -35,6 +37,15 @@
                 showEnl = true;
                 enlLabel = 'ENL';
                 enlThreshold = prefs.enlPrefs.threshold;
+            }
+            if (prefs.mopPrefs.detect === 'Off') {
+                showMop = false;
+                mopLabel = '';
+            }
+            else {
+                showMop = true;
+                mopLabel = 'MoP';
+                mopThreshold = prefs.mopPrefs.threshold;
             }
             if (prefs.units.altitude === 'ft') {
                 multiplier = prefs.metre2foot;
@@ -78,6 +89,11 @@
             if (showEnl) {
                 for (j = 0; j < flight.recordTime.length; j++) {
                     enlData.push([1000 * (flight.recordTime[j] + flight.timeZone.offset), flight.enl[j]]);
+                }
+            }
+            if (showMop) {
+                for (j = 0; j < flight.recordTime.length; j++) {
+                    mopData.push([1000 * (flight.recordTime[j] + flight.timeZone.offset), flight.mop[j]]);
                 }
             }
             altitudeLabel = altitudeLabel + " (" + prefs.altPrefs.altref + ")";
@@ -125,6 +141,62 @@
                     min: 20,
                     max: 4000,
                     show: showEnl,
+                    ticks: [0, 500, 1000]
+                }],
+                crosshair: {
+                    mode: 'xy'
+                },
+                grid: {
+                    clickable: true,
+                    autoHighlight: false
+                }
+            });
+
+
+            baro = new $.plot("#barogram", [{
+                label: mopLabel,
+                data: mopData,
+                yaxis: 2,
+                bars: {
+                    show: showMop
+                },
+                lines: {
+                    show: false
+                },
+                color: '#D0D0FF'
+            }, {
+                label: altitudeLabel,
+                data: barogramData,
+                color: plotColour
+            }, {
+                label: '',
+                data: [
+                    [startTime, mopThreshold],
+                    [finishTime, mopThreshold]
+                ],
+                color: '#D0D0FF',
+                yaxis: 2,
+                lines: {
+                    show: showMop
+                }
+            }], {
+                axisLabels: {
+                    show: true
+                },
+                xaxes: [{
+                    mode: 'time',
+                    timeformat: '%H:%M',
+                    axisLabel: 'Time (' + flight.timeZone.zoneName + ')'
+                }],
+                yaxes: [{
+                    axisLabel: yaxisLabel,
+                    min: altMin
+                }, {
+                    position: "right",
+                    axisLabel: 'Means of Propulsion',
+                    min: 20,
+                    max: 4000,
+                    show: showMop,
                     ticks: [0, 500, 1000]
                 }],
                 crosshair: {
