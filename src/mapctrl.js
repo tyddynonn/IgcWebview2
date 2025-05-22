@@ -438,7 +438,7 @@
                 interactive: false,
 //                zIndex: google.maps.Marker.MAX_ZINDEX + 1,
                 zIndex: 9999,
-                weight: 4
+                weight: 3
             };
             deleteEnl();
             for (i = 0; i < runList.length; i++) {

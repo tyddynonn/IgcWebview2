@@ -29,7 +29,11 @@
 
             var startTime = 1000 * (flight.recordTime[0] + flight.timeZone.offset);
             var finishTime = 1000 * (flight.recordTime[flight.recordTime.length - 1] + flight.timeZone.offset);
-            if (prefs.enlPrefs.detect === 'Off') {
+            // check if there is actuall some ENL or MOP data...
+            const hasEnl = flight.enl.some(e=>e!==0);
+            const hasMop = flight.mop.some(m=>m!==0);
+
+            if (prefs.enlPrefs.detect === 'Off' || !hasEnl) {
                 showEnl = false;
                 enlLabel = '';
             }
@@ -38,7 +42,7 @@
                 enlLabel = 'ENL';
                 enlThreshold = prefs.enlPrefs.threshold;
             }
-            if (prefs.mopPrefs.detect === 'Off') {
+            if (prefs.mopPrefs.detect === 'Off' || !hasMop) {
                 showMop = false;
                 mopLabel = '';
             }
@@ -47,6 +51,7 @@
                 mopLabel = 'MoP';
                 mopThreshold = prefs.mopPrefs.threshold;
             }
+
             if (prefs.units.altitude === 'ft') {
                 multiplier = prefs.metre2foot;
                 yaxisLabel = "Altitude (feet)";
@@ -97,118 +102,119 @@
                 }
             }
             altitudeLabel = altitudeLabel + " (" + prefs.altPrefs.altref + ")";
-            baro = new $.plot("#barogram", [{
-                label: enlLabel,
-                data: enlData,
-                yaxis: 2,
-                bars: {
-                    show: showEnl
-                },
-                lines: {
-                    show: false
-                },
-                color: '#D0D0FF'
-            }, {
-                label: altitudeLabel,
-                data: barogramData,
-                color: plotColour
-            }, {
-                label: '',
-                data: [
-                    [startTime, enlThreshold],
-                    [finishTime, enlThreshold]
-                ],
-                color: '#D0D0FF',
-                yaxis: 2,
-                lines: {
-                    show: showEnl
-                }
-            }], {
-                axisLabels: {
-                    show: true
-                },
-                xaxes: [{
-                    mode: 'time',
-                    timeformat: '%H:%M',
-                    axisLabel: 'Time (' + flight.timeZone.zoneName + ')'
-                }],
-                yaxes: [{
-                    axisLabel: yaxisLabel,
-                    min: altMin
+            if (showEnl) {
+                baro = new $.plot("#barogram", [{
+                    label: enlLabel,
+                    data: enlData,
+                    yaxis: 2,
+                    bars: {
+                        show: showEnl
+                    },
+                    lines: {
+                        show: false
+                    },
+                    color: '#D0D0FF'
                 }, {
-                    position: "right",
-                    axisLabel: 'Environmental Noise Level',
-                    min: 20,
-                    max: 4000,
-                    show: showEnl,
-                    ticks: [0, 500, 1000]
-                }],
-                crosshair: {
-                    mode: 'xy'
-                },
-                grid: {
-                    clickable: true,
-                    autoHighlight: false
-                }
-            });
-
-
-            baro = new $.plot("#barogram", [{
-                label: mopLabel,
-                data: mopData,
-                yaxis: 2,
-                bars: {
-                    show: showMop
-                },
-                lines: {
-                    show: false
-                },
-                color: '#D0D0FF'
-            }, {
-                label: altitudeLabel,
-                data: barogramData,
-                color: plotColour
-            }, {
-                label: '',
-                data: [
-                    [startTime, mopThreshold],
-                    [finishTime, mopThreshold]
-                ],
-                color: '#D0D0FF',
-                yaxis: 2,
-                lines: {
-                    show: showMop
-                }
-            }], {
-                axisLabels: {
-                    show: true
-                },
-                xaxes: [{
-                    mode: 'time',
-                    timeformat: '%H:%M',
-                    axisLabel: 'Time (' + flight.timeZone.zoneName + ')'
-                }],
-                yaxes: [{
-                    axisLabel: yaxisLabel,
-                    min: altMin
+                    label: altitudeLabel,
+                    data: barogramData,
+                    color: plotColour
                 }, {
-                    position: "right",
-                    axisLabel: 'Means of Propulsion',
-                    min: 20,
-                    max: 4000,
-                    show: showMop,
-                    ticks: [0, 500, 1000]
-                }],
-                crosshair: {
-                    mode: 'xy'
-                },
-                grid: {
-                    clickable: true,
-                    autoHighlight: false
-                }
-            });
-
-            $("#barogram").bind("plotclick", function(event, pos, item) {
+                    label: '',
+                    data: [
+                        [startTime, enlThreshold],
+                        [finishTime, enlThreshold]
+                    ],
+                    color: '#D0D0FF',
+                    yaxis: 2,
+                    lines: {
+                        show: showEnl
+                    }
+                }], {
+                    axisLabels: {
+                        show: true
+                    },
+                    xaxes: [{
+                        mode: 'time',
+                        timeformat: '%H:%M',
+                        axisLabel: 'Time (' + flight.timeZone.zoneName + ')'
+                    }],
+                    yaxes: [{
+                        axisLabel: yaxisLabel,
+                        min: altMin
+                    }, {
+                        position: "right",
+                        axisLabel: 'Environmental Noise Level',
+                        min: 20,
+                        max: 4000,
+                        show: showEnl,
+                        ticks: [0, 500, 1000]
+                    }],
+                    crosshair: {
+                        mode: 'xy'
+                    },
+                    grid: {
+                        clickable: true,
+                        autoHighlight: false
+                    }
+                });
+            }
+            if (showMop) {
+                baro = new $.plot("#barogram", [{
+                    label: mopLabel,
+                    data: mopData,
+                    yaxis: 2,
+                    bars: {
+                        show: showMop
+                    },
+                    lines: {
+                        show: false
+                    },
+                    color: '#D0D0FF'
+                }, {
+                    label: altitudeLabel,
+                    data: barogramData,
+                    color: plotColour
+                }, {
+                    label: '',
+                    data: [
+                        [startTime, mopThreshold],
+                        [finishTime, mopThreshold]
+                    ],
+                    color: '#D0D0FF',
+                    yaxis: 2,
+                    lines: {
+                        show: showMop
+                    }
+                }], {
+                    axisLabels: {
+                        show: true
+                    },
+                    xaxes: [{
+                        mode: 'time',
+                        timeformat: '%H:%M',
+                        axisLabel: 'Time (' + flight.timeZone.zoneName + ')'
+                    }],
+                    yaxes: [{
+                        axisLabel: yaxisLabel,
+                        min: altMin
+                    }, {
+                        position: "right",
+                        axisLabel: 'Means of Propulsion',
+                        min: 20,
+                        max: 4000,
+                        show: showMop,
+                        ticks: [0, 500, 1000]
+                    }],
+                    crosshair: {
+                        mode: 'xy'
+                    },
+                    grid: {
+                        clickable: true,
+                        autoHighlight: false
+                    }
+                });
+        }
+            $("#barogram").on("plotclick", function(event, pos, item) {
                 if (item) {
                     var present = require('./presentation');
                     present.showPosition(item.dataIndex);

@@ -298,7 +298,7 @@
                         break;
                     case 'I': //Fix extensions
                         readEnl = getReadEnl(currentLine);
-                        readMop = getReadMoP(currentLine)
+                        readMop = getReadMoP(currentLine);
                         break;
                     case 'C':
                         if (taskRegex.test(currentLine)) { //will parse later
@@ -438,26 +438,7 @@
             glidingRuns.start.push(0);
             if (enlpref.detect === 'On') {
                 do {
-                    if (enl[i] > enlpref.threshold) {
-                        engineRun.push(latLong[i]);
-                        if (startIndex === null) {
-                            startIndex = i;
-                        }
-                    
-                    }
-                    // else {
-                    //     if (startIndex !== null) {
-                    //         timeInterval = recordTime[i - 1] - recordTime[startIndex];
-                    //         if (timeInterval >= enlpref.duration) {
-                    //             glidingRuns.end.push(startIndex);
-                    //             glidingRuns.start.push(i);
-                    //             engineRunList.push(engineRun);
-                    //         }
-                    //         engineRun = [];
-                    //         startIndex = null;
-                    //     }
-                    // }
-                    if (mop[i] > moppref.threshold) {
+                    if ((enl[i] > enlpref.threshold) || (mop[i] > moppref.threshold)) {
                         engineRun.push(latLong[i]);
                         if (startIndex === null) {
                             startIndex = i;
