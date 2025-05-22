@@ -89,8 +89,9 @@
 		
 		var tpCircle = L.circle(
 			centre,
-			radius * 1000,
+
 			{
+                radius: radius * 1000,
 				color: 'black',
 				opacity: 0.8,
 				fillColor: 'green',
@@ -206,13 +207,6 @@
             .then (result => {
                 mapstyles = result
             })
-
-            var openAIPairspacepbf = L.vectorGrid.protobuf(airspaceURLpbf, {
-                vectorTileLayerStyles: mapstyles,
-                subdomains: "abc",
-                maxNativeZoom: 14
-            });
-
 
             var openAIP = L.tileLayer(openaipURL, {
                 detectRetina: true,
